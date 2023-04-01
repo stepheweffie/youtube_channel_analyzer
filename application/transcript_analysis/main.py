@@ -1,9 +1,11 @@
 # main.py
-from application.transcript_analysis.workflow import process_video_transcripts
+import d6tflow
 import argparse
+from workflow import NLPAnalysisTask, plot_word_histogram
 from googleapiclient.discovery import build
-from youtube_transcript_api import YouTubeTranscriptApi
 from app import yt_api_key
+from collections import Counter
+
 
 youtube = build("youtube", "v3", developerKey=yt_api_key)
 
@@ -41,10 +43,30 @@ def get_latest_video(channel_id):
     return None
 
 
-def download_transcript(video_id, language_code="en"):
-    transcript_data = YouTubeTranscriptApi.get_transcript(video_id, languages=[language_code])
-    transcript_text = "\n".join([entry["text"] for entry in transcript_data])
-    return transcript_text
+def process_video_transcripts(channel_url):
+    channel_id = get_channel_id(channel_url)
+    video_ids = get_video_ids(channel_id)
+    processed_texts = {}
+
+    for video_id in video_ids:
+        nlp_task = NLPAnalysisTask(video_id=video_id)
+        d6tflow.run(nlp_task)
+
+        processed_text = nlp_task.output().load()
+        print(f"Processed text for video ID {video_id}")
+
+        # Perform a simple word frequency analysis
+        word_frequencies = Counter()
+        for video_id, processed_text in processed_texts.items():
+            word_frequencies.update(processed_text)
+
+        # Get the most common words
+        most_common_words = word_frequencies.most_common(10)
+        print("Most common words:")
+        for word, count in most_common_words:
+            print(f"{word}: {count}")
+        # Plot the histogram
+        plot_word_histogram(most_common_words)
 
 
 def main(channel_url):

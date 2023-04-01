@@ -2,17 +2,25 @@
 import d6tflow
 # import os
 import openai
-from main import get_channel_id, download_transcript, get_video_ids
+from youtube_transcript_api import YouTubeTranscriptApi
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import matplotlib.pyplot as plt
-from collections import Counter
 
 # Download NLTK resources
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+
+
+def nltk_downloads():
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('wordnet')
+
+
+def download_transcript(video_id, language_code="en"):
+    transcript_data = YouTubeTranscriptApi.get_transcript(video_id, languages=[language_code])
+    transcript_text = "\n".join([entry["text"] for entry in transcript_data])
+    return transcript_text
 
 
 def plot_word_histogram(most_common_words):
@@ -39,33 +47,9 @@ def chat_gpt_response(prompt):
     return response.choices[0].text.strip()
 
 
-def process_video_transcripts(channel_url):
-    channel_id = get_channel_id(channel_url)
-    video_ids = get_video_ids(channel_id)
-    processed_texts = {}
-
-    for video_id in video_ids:
-        nlp_task = NLPAnalysisTask(video_id=video_id)
-        d6tflow.run(nlp_task)
-
-        processed_text = nlp_task.output().load()
-        print(f"Processed text for video ID {video_id}")
-
-        # Perform a simple word frequency analysis
-        word_frequencies = Counter()
-        for video_id, processed_text in processed_texts.items():
-            word_frequencies.update(processed_text)
-
-        # Get the most common words
-        most_common_words = word_frequencies.most_common(10)
-        print("Most common words:")
-        for word, count in most_common_words:
-            print(f"{word}: {count}")
-        # Plot the histogram
-        plot_word_histogram(most_common_words)
-
-
 # Preprocessing
+
+
 def preprocess(text):
     # Tokenization
     tokens = nltk.word_tokenize(text)
@@ -122,3 +106,7 @@ class ChatGPTTask(d6tflow.tasks.TaskPickle):
         prompt = f"The transcript summary is: {transcript_summary}. What is your response?"
         gpt_response = chat_gpt_response(prompt)
         self.save(gpt_response)
+
+
+if __name__ == '__main__':
+    nltk_downloads()

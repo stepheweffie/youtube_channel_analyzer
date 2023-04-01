@@ -68,7 +68,7 @@ for i in range(5):
     prompt_loop()
 
 
-# Pre-process the corpus
+# Pre-process the corpusf
 preprocessed_corpus = [preprocess_text(text) for text in corpus]
 
 # Use a sentiment analysis tool to assign a sentiment score to each response

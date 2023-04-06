@@ -1,12 +1,10 @@
-# main.py
 import d6tflow
 import argparse
-from workflow import NLPAnalysisTask, plot_word_histogram
+from workflow import DownloadTranscriptTask
 from googleapiclient.discovery import build
-from app import yt_api_key
-from collections import Counter
 
-
+api_key = 'api_key'
+yt_api_key = api_key
 youtube = build("youtube", "v3", developerKey=yt_api_key)
 
 
@@ -46,31 +44,18 @@ def get_latest_video(channel_id):
 def process_video_transcripts(channel_url):
     channel_id = get_channel_id(channel_url)
     video_ids = get_video_ids(channel_id)
-    processed_texts = {}
-
     for video_id in video_ids:
-        nlp_task = NLPAnalysisTask(video_id=video_id)
-        d6tflow.run(nlp_task)
-
-        processed_text = nlp_task.output().load()
-        print(f"Processed text for video ID {video_id}")
-
-        # Perform a simple word frequency analysis
-        word_frequencies = Counter()
-        for video_id, processed_text in processed_texts.items():
-            word_frequencies.update(processed_text)
-
-        # Get the most common words
-        most_common_words = word_frequencies.most_common(10)
-        print("Most common words:")
-        for word, count in most_common_words:
-            print(f"{word}: {count}")
-        # Plot the histogram
-        plot_word_histogram(most_common_words)
+        download = DownloadTranscriptTask(video_id=video_id)
+        try:
+            d6tflow.run(download)
+        except RuntimeError:
+            print(video_id)
 
 
 def main(channel_url):
     process_video_transcripts(channel_url)
+    # get_video_ids(get_channel_id(channel_url))
+    # get_latest_video(get_channel_id(channel_url))
 
 
 # Press the green button in the gutter to run the script.

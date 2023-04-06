@@ -1,6 +1,4 @@
-
 import d6tflow
-# import os
 import openai
 from youtube_transcript_api import YouTubeTranscriptApi
 import nltk
@@ -77,8 +75,7 @@ class DownloadTranscriptTask(d6tflow.tasks.TaskPickle):
 
     def run(self):
         transcript_text = download_transcript(self.video_id, self.language_code)
-        if transcript_text:
-            self.save(transcript_text)
+        self.save(transcript_text)
 
 
 class NLPAnalysisTask(d6tflow.tasks.TaskPickle):
@@ -106,6 +103,24 @@ class ChatGPTTask(d6tflow.tasks.TaskPickle):
         prompt = f"The transcript summary is: {transcript_summary}. What is your response?"
         gpt_response = chat_gpt_response(prompt)
         self.save(gpt_response)
+
+
+class WordAnalysisTask(d6tflow.tasks.TaskPickle):
+    processed_texts = {}
+
+    def run(self):
+        processed_text = self.input().load()
+        # Perform a simple word frequency analysis
+        word_frequencies = Counter()
+        for video, processed_text in processed_text.items():
+            word_frequencies.update(processed_text)
+
+        # Get the most common words
+        most_common_words = word_frequencies.most_common(10)
+        print("Most common words:")
+        for word, count in most_common_words:
+            print(f"{word}: {count}")
+        plot_word_histogram(most_common_words)
 
 
 if __name__ == '__main__':
